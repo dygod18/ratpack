@@ -124,6 +124,11 @@ public class DefaultHttpClient implements HttpClientInternal {
   }
 
   @Override
+  public Action<? super RequestSpec> getRequestInterceptor() {
+    return requestInterceptor;
+  }
+
+  @Override
   public Action<? super ReceivedResponse> getResponseInterceptor() {
     return responseInterceptor;
   }
@@ -143,6 +148,20 @@ public class DefaultHttpClient implements HttpClientInternal {
   @Override
   public void close() {
     channelPoolMap.close();
+  }
+
+  @Override
+  public HttpClient copyWith(Action<? super HttpClientSpec> action) throws Exception {
+    DefaultHttpClient.Spec spec = new DefaultHttpClient.Spec();
+    Action<? super HttpClientSpec> clonedConfig = s -> {
+      s.byteBufAllocator(getByteBufAllocator());
+      s.maxContentLength(getMaxContentLength());
+      s.poolSize(getPoolSize());
+      s.readTimeout(getReadTimeout());
+      s.requestIntercept(getRequestInterceptor());
+      s.responseIntercept(getResponseInterceptor());
+    };
+    return of(clonedConfig.append(action));
   }
 
   public static HttpClient of(Action<? super HttpClientSpec> action) throws Exception {

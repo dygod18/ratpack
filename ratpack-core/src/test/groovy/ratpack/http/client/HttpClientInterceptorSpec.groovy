@@ -83,4 +83,46 @@ class HttpClientInterceptorSpec extends BaseHttpClientSpec {
     then:
     result == 'ok'
   }
+
+  @Timeout(5)
+  def "can override http client"() {
+    given:
+
+    def latch = new CountDownLatch(1)
+
+    otherApp {
+      get {
+        render request.headers.get('X-GLOBAL')
+      }
+    }
+
+    bindings {
+      bindInstance HttpClient, HttpClient.of { spec ->
+        spec.responseIntercept { response ->
+          latch.countDown()
+        }
+      }
+    }
+    handlers {
+      all { HttpClient client ->
+        next single(client.copyWith { spec ->
+          spec.requestIntercept { request ->
+            request.headers { headers ->
+              headers.add 'X-GLOBAL', 'foo'
+            }
+          }
+        })
+      }
+      get { HttpClient client ->
+        render client.get(otherAppUrl("")).map { it.body.text }
+      }
+    }
+
+    when:
+    def result = text
+    latch.await(5, TimeUnit.SECONDS)
+
+    then:
+    result == 'foo'
+  }
 }
