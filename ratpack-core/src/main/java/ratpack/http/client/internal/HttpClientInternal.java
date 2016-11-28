@@ -16,10 +16,14 @@
 
 package ratpack.http.client.internal;
 
+import ratpack.func.Action;
 import ratpack.http.client.HttpClient;
+import ratpack.http.client.ReceivedResponse;
 
 interface HttpClientInternal extends HttpClient {
 
   HttpChannelPoolMap getChannelPoolMap();
+
+  Action<? super ReceivedResponse> getResponseInterceptor();
 
 }
