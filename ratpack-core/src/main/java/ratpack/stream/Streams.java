@@ -31,6 +31,7 @@ import ratpack.stream.internal.*;
 import ratpack.util.Types;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -665,6 +666,34 @@ public class Streams {
     return new BufferingPublisher<T>(disposer, write -> {
       return new ForkingSubscription<>(execConfig, publisher, write);
     }).bindExec(disposer);
+  }
+
+  /**
+   * Returns a publisher that aggregates the given publishers into a single stream of elements, without interleaving them.
+   * <p>
+   * The returned publisher obeys the following rules:
+   * <ul>
+   *   <li>
+   *    Given publishers are subscribed to lazily and in the order they are supplied. That is, a publisher is not subscribed
+   *    to until the previous publisher has completed.
+   *   </li>
+   *   <li>
+   *    Elements emitted from the given publishers are not interleaved.
+   *   </li>
+   *   <li>
+   *    Only when all given publishers have signalled completion will the downstream subscriber be completed.
+   *   </li>
+   * </ul>
+   * <p>
+   *
+   * @param publishers the publishers to concatenate
+   * @param <T> the type of emitted item
+   * @return a publisher that emits a single stream of elements from multiple publishers
+   * @since 1.5
+   */
+  @SafeVarargs
+  public static <T> TransformablePublisher<T> concat(Publisher<? extends T>... publishers) {
+    return new ConcatPublisher<>(Arrays.asList(publishers));
   }
 
 }
